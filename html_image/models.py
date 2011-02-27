@@ -105,7 +105,10 @@ class OwnedImageMixin(object):
 
 
 class OwnedImageToOneField(models.OneToOneField):
-    """Related field from a OwnedImage to owner"""
+    """
+    Related field from a OwnedImage to owner
+
+    """
     def __init__(self, *args, **kwargs):
         disallowed_args = ('blank', 'null')
         for arg in disallowed_args:
@@ -132,6 +135,7 @@ class SizedImageMixin(object):
     MAX_HEIGHT = None
 
     def clean(self):
+        super(SizedImageMixin, self).clean()
         mf = u"Image {0} too {1} ({2:n}px given, {3} allowed: {4:n}px)"
         if self.MIN_WIDTH is not None and self.width < self.MIN_WIDTH:
             m = mf.format('width', 'small', self.width, 'min', self.MIN_WIDTH)
