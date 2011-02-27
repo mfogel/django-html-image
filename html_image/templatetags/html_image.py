@@ -6,12 +6,12 @@ from ..models import SizedImage
 register = template.Library()
 
 @register.filter
-def sized_image_tag(sized_image):
-    if not isinstance(sized_image, SizedImage):
+def html_image_tag(html_image):
+    if not isinstance(html_image, SizedImage):
         m = u'Given %s, expected %s' % \
-            (sized_image.__class__.__name__, SizedImage.__name__)
+            (type(html_image).__name__, SizedImage.__name__)
         raise TypeError(m)
-    alt = sized_image.alt or unicode(sized_image.owner)
+    alt = html_image.alt or unicode(html_image.owner)
     html = u'<img alt="{alt}" src="{src}" />'.format(
-            alt=alt, src=sized_image.image.url)
+            alt=alt, src=html_image.image.url)
     return mark_safe(html)
