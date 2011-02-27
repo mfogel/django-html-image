@@ -31,10 +31,13 @@ class BaseHtmlImage(models.Model):
 
     def __unicode__(self):
         try:
-            fn = basename(self.image.path)
+            return basename(self.image.path)
         except ValueError:
-            fn = '(no image file)'
-        return u'{0}: {1}'.format(type(self), fn)
+            return u'{0} (no image file)'.format(type(self), fn)
+
+    @property
+    def alt_display(self):
+        return self.alt
 
     _width = None
     def _get_width(self):
@@ -82,12 +85,13 @@ class OwnedImageMixin(object):
             m = u"Must be connected to owner via a related field with name specified in self.owner_field_name (currently configured as '{0}').".format(self.owner_field_name)
             raise ImproperlyConfigured(m)
 
-    def alt(self):
+    @property
+    def alt_display(self):
         """
         If alt is explicitly specified in the DB, use that.  Elsewise, use the
         unicode() of the owner.
         """
-        return super(OwnedImageMixin, self).alt or \
+        return super(OwnedImageMixin, self).alt_display or \
                 unicode(getattr(self, self.owner_field_name))
 
     @property
@@ -141,7 +145,7 @@ class SizedImageMixin(object):
             m = mf.format('width', 'small', self.width, 'min', self.MIN_WIDTH)
             raise ValidationError(m)
         if self.MAX_WIDTH is not None and self.width > self.MAX_WIDTH:
-            m = mf.format('width', 'large', self.width, 'max', self.MIN_WIDTH)
+            m = mf.format('width', 'large', self.width, 'max', self.MAX_WIDTH)
             raise ValidationError(m)
         if self.MIN_HEIGHT is not None and self.height < self.MIN_HEIGHT:
             m = mf.format(
@@ -149,5 +153,5 @@ class SizedImageMixin(object):
             raise ValidationError(m)
         if self.MAX_HEIGHT is not None and self.height > self.MAX_HEIGHT:
             m = mf.format(
-                    'height', 'large', self.height, 'max', self.MIN_HEIGHT)
+                    'height', 'large', self.height, 'max', self.MAX_HEIGHT)
             raise ValidationError(m)
