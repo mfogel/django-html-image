@@ -57,14 +57,6 @@ class BaseHtmlImage(models.Model):
         return join(self.UNOWNED_IMAGES_DIRECTORY, org_filename)
 
 
-class HtmlImage(BaseHtmlImage):
-    """
-    Basic un-owned html image. Non-abastract version of BaseHtmlIamge.
-
-    """
-    pass
-
-
 class OwnedImageMixin(object):
     """
     Use this mixin with BaseHtmlImage and OwnedImageToOneField with a
