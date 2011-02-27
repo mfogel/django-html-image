@@ -1,7 +1,7 @@
 from django import template
 from django.utils.safestring import mark_safe
 
-from sizedimage.models import SizedImage
+from ..models import SizedImage
 
 register = template.Library()
 
