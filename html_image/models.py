@@ -6,22 +6,20 @@ from django.db.models.base import ModelBase
 from django.template.defaultfilters import slugify
 
 
-class SizedImageMetaclass(ModelBase):
+class BaseHtmlImageMetaclass(ModelBase):
     def __unicode__(self):
         return unicode(self.__name__)
 
 
-class SizedImage(models.Model):
+class BaseHtmlImage(models.Model):
     """
-    Image validated to specific sizes.
+    Basic abstract model. Derrive from me, include desired mixins.
 
-    Subclass this class with another, define WIDTH_PX and HEIGHT_PX class vars.
-    Set up a one-to-one field from the 'owner' of this image with
-    related_name = 'owner'.
     """
-    __metaclass__ = SizedImageMetaclass
+    __metaclass__ = BaseHtmlImageMetaclass
 
-    # if 'alt' is not given, unicode(self.owner) will be used in html
+    UNOWNED_IMAGES_DIRECTORY = 'html-images'
+
     alt = models.CharField(max_length=80, blank=True)
 
     # 'width' and 'height' are object properties, not actual db fields
@@ -31,32 +29,12 @@ class SizedImage(models.Model):
     class Meta:
         abstract = True
 
-    def __init__(self, *args, **kwargs):
-        required_attrs = ['WIDTH_PX', 'HEIGHT_PX']
-        for attr in required_attrs:
-            if not hasattr(self, attr):
-                m = u'Usage: subclass %s and declare class vars %s' % \
-                        (type(self), attr)
-                raise ImproperlyConfigured(m)
-        super(SizedImage, self).__init__(*args, **kwargs)
-        # A single instance of field is shared among all instances of the same
-        # model.  As such, past the first initialized instance of a model
-        # this call is redunant - just overwrites related_name with same value.
-        self._meta.get_field('owner').related_name = self.image_name
-
-    def clean(self):
-        if self.width != self.WIDTH_PX or self.height != self.HEIGHT_PX:
-            m = u'Image dimentions must be %dx%d px (%dx%d px given)' % \
-                    (self.width, self.height, self.WIDTH_PX, self.HEIGHT_PX)
-            raise ValidationError(m)
-
-    # override these to customize
-    @property
-    def image_name(self):
-        return slugify(self._meta.verbose_name)
-    @property
-    def owner_name(self):
-        return slugify(self.owner._meta.verbose_name_plural)
+    def __unicode__(self):
+        try:
+            fn = basename(self.image.path)
+        except ValueError:
+            fn = '(no image file)'
+        return u'{0}: {1}'.format(type(self), fn)
 
     _width = None
     def _get_width(self):
@@ -72,34 +50,104 @@ class SizedImage(models.Model):
         self._height = val
     height = property(_get_height, _set_height)
 
-    def __unicode__(self):
-        try:
-            fn = basename(self.image.path)
-        except ValueError:
-            fn = '(no image file)'
-        return u'%s: %s' % (type(self), fn)
+    def upload_to(self, org_filename):
+        return join(self.UNOWNED_IMAGES_DIRECTORY, org_filename)
+
+
+class HtmlImage(BaseHtmlImage):
+    """
+    Basic un-owned html image. Non-abastract version of BaseHtmlIamge.
+
+    """
+    pass
+
+
+class OwnedImageMixin(object):
+    """
+    Use this mixin with BaseHtmlImage and OwnedImageToOneField with a
+    field name of self.owner_field_name.
+
+    Override owner_directory_name and image_directory_name to customize
+    where images are stored in the filesystem.  Images will be stored in:
+
+    MEDIA_ROOT/owner_directory_name/owner.pk/image_directory_name/org_filename
+
+    """
+    owner_field_name = 'owner'
+
+    def __init__(self, *args, **kwargs):
+        super(OwnedImageMixin, self).__init__(*args, **kwargs)
+        owner_field = self._meta.get_field(self.owner_field_name)
+        if not isinstance(owner_field, models.ForeignKey):
+            m = u"Must be connected to owner via a related field with name specified in self.owner_field_name (currently configured as '{0}').".format(self.owner_field_name)
+            raise ImproperlyConfigured(m)
+
+    def alt(self):
+        """
+        If alt is explicitly specified in the DB, use that.  Elsewise, use the
+        unicode() of the owner.
+        """
+        return super(OwnedImageMixin, self).alt or \
+                unicode(getattr(self, self.owner_field_name))
+
+    @property
+    def image_directory_name(self):
+        return slugify(self._meta.verbose_name)
+
+    @property
+    def owner_directory_name(self):
+        return slugify(self.owner._meta.verbose_name_plural)
 
     def upload_to(self, org_filename):
-        if self.owner.pk is None:
-            m = u"Cannot determine where to put %s instance's image file.  Owner has no primary key... save() owner to generate one." % \
-                    (type(self),)
+        owner = getattr(self, self.owner_field_name)
+        if owner.pk is None:
+            m = u"Cannot determine where to put {0} instance's image file.  Owner has no primary key... save() owner to generate one.".format(type(self))
             raise IntegrityError(m)
-        path_frmt = '{owner_name}/{owner_pk}/{image_name}/{org_filename}'
-        return join(self.owner_name, unicode(self.owner.pk), self.image_name,
-                org_filename)
+        return join(
+                self.owner_directory_name, unicode(owner.pk),
+                self.image_directory_name, org_filename)
 
 
-class SizedImageToOneField(models.OneToOneField):
-    """Related field from a SizedImage to owner"""
+class OwnedImageToOneField(models.OneToOneField):
+    """Related field from a OwnedImage to owner"""
     def __init__(self, *args, **kwargs):
-        disallowed_args = ('related_name', 'blank', 'null')
+        disallowed_args = ('blank', 'null')
         for arg in disallowed_args:
             if kwargs.has_key(arg):
-                m = u'Cannot set %s kwarg on %s' % (arg, type(self))
+                m = u"Cannot set {0} kwarg on {1}".format(arg, type(self))
                 raise ImproperlyConfigured(m)
         kwargs.update({
-                # 'related_name' set in SizedImage.__init__
-                'blank': False,
-                'null': False,
-            })
-        super(SizedImageToOneField, self).__init__(*args, **kwargs)
+            'blank': False,
+            'null': False,
+        })
+        super(OwnedImageToOneField, self).__init__(*args, **kwargs)
+
+
+class SizedImageMixin(object):
+    """
+    Use this mixin with BaseHtmlImage to validate images to specific sizes.
+    Override MIN_WIDTH, MAX_WIDTH, MIN_HEIGHT, and MAX_HEIGHT to
+    constrain image sizes.
+
+    """
+    MIN_WIDTH = None
+    MAX_WIDTH = None
+    MIN_HEIGHT = None
+    MAX_HEIGHT = None
+
+    def clean(self):
+        mf = u"Image {0} too {1} ({2:n}px given, {3} allowed: {4:n}px)"
+        if self.MIN_WIDTH is not None and self.width < self.MIN_WIDTH:
+            m = mf.format('width', 'small', self.width, 'min', self.MIN_WIDTH)
+            raise ValidationError(m)
+        if self.MAX_WIDTH is not None and self.width > self.MAX_WIDTH:
+            m = mf.format('width', 'large', self.width, 'max', self.MIN_WIDTH)
+            raise ValidationError(m)
+        if self.MIN_HEIGHT is not None and self.height < self.MIN_HEIGHT:
+            m = mf.format(
+                    'height', 'small', self.height, 'min', self.MIN_HEIGHT)
+            raise ValidationError(m)
+        if self.MAX_HEIGHT is not None and self.height > self.MAX_HEIGHT:
+            m = mf.format(
+                    'height', 'large', self.height, 'max', self.MIN_HEIGHT)
+            raise ValidationError(m)
