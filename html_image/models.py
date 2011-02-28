@@ -4,6 +4,7 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import models, IntegrityError
 from django.db.models.base import ModelBase
 from django.template.defaultfilters import slugify
+from django.utils.translation import ugettext as _
 
 
 class BaseHtmlImageMetaclass(ModelBase):
@@ -33,7 +34,7 @@ class BaseHtmlImage(models.Model):
         try:
             return basename(self.image.path)
         except ValueError:
-            return u'{0} (no image file)'.format(type(self), fn)
+            return _('{t} (no image file)').format(t=type(self))
 
     @property
     def alt_display(self):
@@ -74,7 +75,7 @@ class OwnedImageMixin(object):
         super(OwnedImageMixin, self).__init__(*args, **kwargs)
         owner_field = self._meta.get_field(self.owner_field_name)
         if not isinstance(owner_field, models.ForeignKey):
-            m = u"Must be connected to owner via a related field with name specified in self.owner_field_name (currently configured as '{0}').".format(self.owner_field_name)
+            m = _("Must be connected to owner via a related field with name specified in self.owner_field_name (currently configured as '{ofn}').").format(ofn=self.owner_field_name)
             raise ImproperlyConfigured(m)
 
     @property
@@ -97,7 +98,7 @@ class OwnedImageMixin(object):
     def upload_to(self, org_filename):
         owner = getattr(self, self.owner_field_name)
         if owner.pk is None:
-            m = u"Cannot determine where to put {0} instance's image file.  Owner has no primary key... save() owner to generate one.".format(type(self))
+            m = _("Cannot determine where to put {t} instance's image file.  Owner has no primary key... save() owner to generate one.").format(t=type(self))
             raise IntegrityError(m)
         return join(
                 self.owner_directory_name, unicode(owner.pk),
@@ -113,7 +114,8 @@ class OwnedImageToOneField(models.OneToOneField):
         disallowed_args = ('blank', 'null')
         for arg in disallowed_args:
             if kwargs.has_key(arg):
-                m = u"Cannot set {0} kwarg on {1}".format(arg, type(self))
+                m = _("Cannot set {a} kwarg on {s}").format(
+                        a=arg, s=type(self))
                 raise ImproperlyConfigured(m)
         kwargs.update({
             'blank': False,
@@ -135,19 +137,42 @@ class SizedImageMixin(object):
     MAX_HEIGHT = None
 
     def clean(self):
+        """
+        Validate given image matches required size constraints.
+
+        """
         super(SizedImageMixin, self).clean()
-        mf = u"Image {0} too {1} ({2:n}px given, {3} allowed: {4:n}px)"
-        if self.MIN_WIDTH is not None and self.width < self.MIN_WIDTH:
-            m = mf.format('width', 'small', self.width, 'min', self.MIN_WIDTH)
+        if (self.MIN_WIDTH is not None and self.width < self.MIN_WIDTH or \
+            self.MAX_WIDTH is not None and self.width > self.MAX_WIDTH or \
+            self.MIN_HEIGHT is not None and self.height < self.MIN_HEIGHT or \
+            self.MAX_HEIGHT is not None and self.height < self.MAX_HEIGHT
+        ):
+            m = self._get_error_message()
             raise ValidationError(m)
-        if self.MAX_WIDTH is not None and self.width > self.MAX_WIDTH:
-            m = mf.format('width', 'large', self.width, 'max', self.MAX_WIDTH)
-            raise ValidationError(m)
-        if self.MIN_HEIGHT is not None and self.height < self.MIN_HEIGHT:
-            m = mf.format(
-                    'height', 'small', self.height, 'min', self.MIN_HEIGHT)
-            raise ValidationError(m)
-        if self.MAX_HEIGHT is not None and self.height > self.MAX_HEIGHT:
-            m = mf.format(
-                    'height', 'large', self.height, 'max', self.MAX_HEIGHT)
-            raise ValidationError(m)
+
+    def _get_error_message(self):
+        """
+        Error message for when a image fails size vaildation.
+
+        """
+        def get_constraint(min_req, max_req, desc):
+            if min_req is not None and max_req is not None:
+                if min_req is max_req:
+                    constraint = _('{d}={r:n}').format(d=desc, r=min_req)
+                else:
+                    constraint = '{mn:n}<={d}<={mx:n}'.format(
+                            mn=min_req, d=desc, mx=max_req)
+            elif min_req is not None:
+                constraint = _('{mn:n}<={d}').format(d=desc, mn=min_req)
+            elif max_req is not None:
+                constraint = _('{d}<={mx:n}').format(d=desc, mx=max_req)
+            else:
+                constraint = None
+            return constraint
+
+        width_cst = get_constraint(self.MIN_WIDTH, self.MAX_WIDTH, 'width')
+        height_cst = get_constraint(self.MIN_HEIGHT, self.MAX_HEIGHT, 'height')
+        full_cst = ', '.join((width_cst, height_cst))
+
+        m = _("Image does not match size constraints. Given: {gw}x{gh}, Required: {cst} (px)").format(gw=self.width, gh=self.height, cst=full_cst)
+        return m
