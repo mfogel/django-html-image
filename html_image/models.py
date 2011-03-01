@@ -21,10 +21,11 @@ class BaseHtmlImage(models.Model):
 
     UNOWNED_IMAGES_DIRECTORY = 'html-images'
 
-    alt = models.CharField(max_length=80, blank=True)
+    alt = models.CharField(_('Alternate Text'), max_length=80, blank=True)
 
     # 'width' and 'height' are object properties, not actual db fields
-    image = models.ImageField(width_field='width', height_field='height',
+    image = models.ImageField(_('Image'),
+            width_field='width', height_field='height',
             upload_to=lambda inst,fn: inst.upload_to(fn))
 
     class Meta:
