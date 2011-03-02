@@ -171,8 +171,10 @@ class SizedImageMixin(object):
                 constraint = None
             return constraint
 
-        width_cst = get_constraint(self.MIN_WIDTH, self.MAX_WIDTH, 'width')
-        height_cst = get_constraint(self.MIN_HEIGHT, self.MAX_HEIGHT, 'height')
+        width_cst = get_constraint(
+                self.MIN_WIDTH, self.MAX_WIDTH, _('width'))
+        height_cst = get_constraint(
+                self.MIN_HEIGHT, self.MAX_HEIGHT, _('height'))
         full_cst = ', '.join((width_cst, height_cst))
 
         m = _("Image does not match size constraints. Given: {gw}x{gh}, Required: {cst} (px)").format(gw=self.width, gh=self.height, cst=full_cst)
