@@ -1,0 +1,76 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-03-01 21:51-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: models.py:24
+msgid "Alternate Text"
+msgstr "替代文字"
+
+#: models.py:27
+msgid "Image"
+msgstr "图片"
+
+#: models.py:38
+msgid "{t} (no image file)"
+msgstr "{t] (没有图像文件)"
+
+#: models.py:79
+msgid ""
+"Must be connected to owner via a related field with name specified in self."
+"owner_field_name (currently configured as '{ofn}')."
+msgstr "必须连接到业主与 self.owner_field_name 指定名称 (现为配置 '{ofn}')，通过相关领域。"
+
+#: models.py:102
+msgid ""
+"Cannot determine where to put {t} instance's image file.  Owner has no "
+"primary key... save() owner to generate one."
+msgstr "无法确定在何处放置 {t} 实例的图像文件。拥有人没有主键... save() 生成一个所有者。"
+
+#: models.py:118
+msgid "Cannot set {a} kwarg on {s}"
+msgstr "不能设置 {1} {2} kwarg"
+
+#: models.py:162
+msgid "{d}={r:n}"
+msgstr ""
+
+#: models.py:167
+msgid "{mn:n}<={d}"
+msgstr ""
+
+#: models.py:169
+msgid "{d}<={mx:n}"
+msgstr ""
+
+#: models.py:175
+msgid "width"
+msgstr "宽度"
+
+#: models.py:177
+msgid "height"
+msgstr "高度"
+
+#: models.py:180
+msgid ""
+"Image does not match size constraints. Given: {gw}x{gh}, Required: {cst} (px)"
+msgstr "图片大小限制不匹配。已知：{gw}x{gh}，要求：{cst} (px)"
+
+#: templatetags/html_image.py:12
+msgid "Given '{g}' of type {tg}, expected {te}"
+msgstr "鉴于类型 '{g}' {tg}，预计 {te}"
