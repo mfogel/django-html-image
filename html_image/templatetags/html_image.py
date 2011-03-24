@@ -6,12 +6,13 @@ from ..models import BaseHtmlImage
 
 register = template.Library()
 
+IMG_TAG_FORMAT_STR = u'<img alt="{alt}" src="{src}" />'
+
 @register.filter
 def html_image_tag(html_image):
-    # valid html req's both alt and src tags.
-    try:
-        html = u'<img alt="{0}" src="{1}" />'.format(
-                html_image.alt_display, html_image.image.url)
-    except:
+    if not html_image:
         html = u''
+    # valid html req's both alt and src tags.
+    html = IMG_TAG_FORMAT_STR.format(
+                alt=html_image.alt_display, src=html_image.image.url)
     return mark_safe(html)

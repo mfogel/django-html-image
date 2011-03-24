@@ -39,6 +39,8 @@ class BaseHtmlImage(models.Model):
 
     @property
     def alt_display(self):
+        if not self.alt:
+            return self.image.name
         return self.alt
 
     _width = None
@@ -82,11 +84,16 @@ class OwnedImageMixin(object):
     @property
     def alt_display(self):
         """
-        If alt is explicitly specified in the DB, use that.  Elsewise, use the
-        unicode() of the owner.
+        If alt is explicitly specified in the DB, use that.
+        Elsewise, use the unicode() of the owner if it's not empty.
+        If it is, then fall back on image default alt value.
         """
-        return super(OwnedImageMixin, self).alt_display or \
-                unicode(getattr(self, self.owner_field_name))
+        if self.alt:
+            return self.alt
+        owner_name = unicode(getattr(self, self.owner_field_name))
+        if owner_name:
+            return owner_name
+        return super(OwnedImageMixin, self).alt_display
 
     @property
     def image_directory_name(self):
