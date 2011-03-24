@@ -153,7 +153,7 @@ class SizedImageMixin(object):
         if (self.MIN_WIDTH is not None and self.width < self.MIN_WIDTH or \
             self.MAX_WIDTH is not None and self.width > self.MAX_WIDTH or \
             self.MIN_HEIGHT is not None and self.height < self.MIN_HEIGHT or \
-            self.MAX_HEIGHT is not None and self.height < self.MAX_HEIGHT
+            self.MAX_HEIGHT is not None and self.height > self.MAX_HEIGHT
         ):
             m = self._get_error_message()
             raise ValidationError(m)
@@ -182,7 +182,7 @@ class SizedImageMixin(object):
                 self.MIN_WIDTH, self.MAX_WIDTH, _('width'))
         height_cst = get_constraint(
                 self.MIN_HEIGHT, self.MAX_HEIGHT, _('height'))
-        full_cst = ', '.join((width_cst, height_cst))
+        full_cst = ', '.join(filter(None, (width_cst, height_cst)))
 
         m = _("Image does not match size constraints. Given: {gw}x{gh}, Required: {cst} (px)").format(gw=self.width, gh=self.height, cst=full_cst)
         return m
