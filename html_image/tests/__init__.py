@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models
-from django.test import Client, TestCase
+from django.test import TestCase
 
 from ..models import *
 from ..templatetags.html_image import *
