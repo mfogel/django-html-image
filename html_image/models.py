@@ -126,6 +126,13 @@ class OwnedImageToOneField(models.OneToOneField):
         })
         super(OwnedImageToOneField, self).__init__(*args, **kwargs)
 
+# play well with South if it's being used
+try:
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules([], ["html_image\.models\.OwnedImageToOneField$"])
+except ImportError:
+    pass
+
 
 class SizedImageMixin(object):
     """
