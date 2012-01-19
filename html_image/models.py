@@ -13,10 +13,7 @@ class BaseHtmlImageMetaclass(ModelBase):
 
 
 class BaseHtmlImage(models.Model):
-    """
-    Basic abstract model. Derrive from me, include desired mixins.
-
-    """
+    "Basic abstract model. Derrive from me, include desired mixins."
     __metaclass__ = BaseHtmlImageMetaclass
 
     UNOWNED_IMAGES_DIRECTORY = 'html-images'
@@ -70,8 +67,8 @@ class OwnedImageMixin(object):
     where images are stored in the filesystem.  Images will be stored in:
 
     MEDIA_ROOT/owner_directory_name/owner.pk/image_directory_name/org_filename
-
     """
+
     owner_field_name = 'owner'
 
     def __init__(self, *args, **kwargs):
@@ -114,10 +111,8 @@ class OwnedImageMixin(object):
 
 
 class OwnedImageToOneField(models.OneToOneField):
-    """
-    Related field from a OwnedImage to owner
+    "Related field from a OwnedImage to owner"
 
-    """
     def __init__(self, *args, **kwargs):
         disallowed_args = ('blank', 'null')
         for arg in disallowed_args:
@@ -137,18 +132,15 @@ class SizedImageMixin(object):
     Use this mixin with BaseHtmlImage to validate images to specific sizes.
     Override MIN_WIDTH, MAX_WIDTH, MIN_HEIGHT, and MAX_HEIGHT to
     constrain image sizes.
-
     """
+
     MIN_WIDTH = None
     MAX_WIDTH = None
     MIN_HEIGHT = None
     MAX_HEIGHT = None
 
     def clean(self):
-        """
-        Validate given image matches required size constraints.
-
-        """
+        "Validate given image matches required size constraints."
         super(SizedImageMixin, self).clean()
         if (self.MIN_WIDTH is not None and self.width < self.MIN_WIDTH or \
             self.MAX_WIDTH is not None and self.width > self.MAX_WIDTH or \
@@ -159,10 +151,8 @@ class SizedImageMixin(object):
             raise ValidationError(m)
 
     def _get_error_message(self):
-        """
-        Error message for when a image fails size vaildation.
+        "Error message for when a image fails size vaildation."
 
-        """
         def get_constraint(min_req, max_req, desc):
             if min_req is not None and max_req is not None:
                 if min_req is max_req:
